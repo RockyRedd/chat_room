@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ch">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/socket.io/socket.io.js"></script>
+    <title>Document</title>
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+      }
+      html {
+        font-size: 13.3333333333333vw;
+      }
+      body {
+        width: 100%;
+      }
+      #content {
+        height: 9rem;
+        background-color: rgb(245, 245, 245);
+        overflow-x: none;
+        overflow-y: auto;
+        white-space: wrap;
+        padding: 0 0.2rem;
+      }
+      #wrapper {
+        background-color: rgb(100, 100, 100);
+        height: 0.8rem;
+      }
+      #input {
+        display: block;
+        width: 6rem;
+        height: 0.6rem;
+        float: left;
+        margin-left: 0.2rem;
+        margin-top: 0.05rem;
+        border-radius: 0.1rem;
+        font-size: 0.25rem;
+      }
+      #input:focus {
+        outline: none;
+      }
+      #btn {
+        float: right;
+        font-size: 0.1rem;
+        width: 0.8rem;
+        height: 0.6rem;
+        background-color: #efefef;
+        border-radius: 0.1rem;
+        margin-top: 0.1rem;
+        margin-right: 0.1rem;
+      }
+      #btn:focus {
+        outline: none;
+      }
+      #btn:active {
+        background-color: rgb(150, 150, 150);
+      }
+      .welcome,
+      .goodbye {
+        font-size: 0.14rem;
+        color: gray;
+        text-align: center;
+      }
+      .msg {
+        font-size: 0.26rem;
+        border-radius: 0.07rem;
+        padding: 0.05rem;
+      }
+      .msg:nth-of-type(2n) {
+        background-color: rgb(230, 230, 200);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="content"></div>
+    <div id="wrapper">
+      <input id="input" type="text" autofocus />
+      <button id="btn">发送</button>
+    </div>
+    <script>
+      function createAndAppend(tag, className, data) {
+        const elm = document.createElement(tag)
+        elm.classList.add(className)
+        if (className === 'welcome') {
+          elm.innerText = `欢迎${data}来到聊天室`
+        } else if (className === 'msg') {
+          elm.innerText = `${data.name}:${data.msg}`
+        } else if (className === 'goodbye') {
+          elm.innerText = `${data}离开了聊天室`
+        }
+        content.appendChild(elm)
+        return elm
+      }
+      const content = document.querySelector('#content')
+      const input = document.querySelector('#input')
+      const btn = document.querySelector('#btn')
+      const socket = io()
+      let name = prompt('请输入你的昵称')
+      socket.emit('login', name)
+      socket.on('welcome', (data) => {
+        createAndAppend('p', 'welcome', data)
+        if (name === null || name === '') name = data
+      })
+      btn.addEventListener(
+        'click',
+        function (event) {
+          if (input.value && input.value !== '') {
+            const data = {
+              name,
+              msg: input.value,
+            }
+            socket.emit('sendMsg', data)
+            input.value = ''
+          }
+        },
+        false
+      )
+      document.onkeydown = function (event) {
+        if (event.keyCode == 13 && input.value && input.value !== '') {
+          const data = {
+            name,
+            msg: input.value,
+          }
+          socket.emit('sendMsg', data)
+          input.value = ''
+        }
+      }
+      socket.on('receiveMsg', (data) => {
+        const elm = createAndAppend('p', 'msg', data)
+        if (data.name === name) {
+          elm.style.textAlign = 'right'
+        }
+      })
+      socket.on('goodbye', (data) => {
+        createAndAppend('p', 'goodbye', data)
+      })
+    </script>
+  </body>
+</html>
